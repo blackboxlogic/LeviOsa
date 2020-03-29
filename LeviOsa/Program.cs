@@ -84,7 +84,10 @@ namespace JpgToBmp
 			{
 				var tempPath = Path.ChangeExtension(path, "pgm");
 				ShaniSoft.Drawing.PNM.WritePNM(tempPath, image);
-				RunProcess(@"potrace-1.16.win64\potrace.exe", $"--svg \"{tempPath}\"");
+				// http://potrace.sourceforge.net/potrace.1.html
+				var result = RunProcess(@"potrace-1.16.win64\potrace.exe", $"--svg --opaque \"{tempPath}\"");
+				if (result == 1) throw new Exception($"potrace exited with code {result}: the command was invalid");
+				if (result == 2) throw new Exception($"potrace exited with code {result}: the command was valid but there was an error");
 				File.Delete(tempPath);
 			}
 			else if (Enum.TryParse<ShaniSoft.Drawing.PNMType>(extension, out _))
@@ -97,7 +100,7 @@ namespace JpgToBmp
 			}
 		}
 
-		private static void RunProcess(string command, string args)
+		private static int RunProcess(string command, string args)
 		{
 			Console.WriteLine($"Running: {command} {args}");
 			Process process = new Process()
@@ -112,6 +115,7 @@ namespace JpgToBmp
 			};
 			process.Start();
 			process.WaitForExit();
+			return process.ExitCode;
 		}
 	}
 }
